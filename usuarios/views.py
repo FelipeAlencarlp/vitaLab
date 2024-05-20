@@ -5,10 +5,9 @@ from django.contrib.auth import authenticate, login
 
 def cadastro(request):
     if request.user.is_authenticated:
-        return redirect('/')
+        return redirect('/exames/solicitar_exames/')
 
-    if request.method == 'GET':
-        return render(request, 'cadastro.html')
+    return render(request, 'cadastro.html')
 
 
 def valida_cadastro(request):
@@ -56,10 +55,9 @@ def valida_cadastro(request):
 
 def logar(request):
     if request.user.is_authenticated:
-        return redirect('/')
+        return redirect('/exames/solicitar_exames/')
     
-    if request.method == 'GET':
-        return render(request, 'login.html')
+    return render(request, 'login.html')
 
 
 def valida_login(request):
@@ -71,7 +69,7 @@ def valida_login(request):
 
         if usuarioExiste:
             login(request, usuarioExiste)
-            return redirect('/')
+            return redirect('/exames/solicitar_exames/')
         
         messages.add_message(request, messages.ERROR, 'Usuário ou senha inválido.')
         return redirect('/auth/login/')
