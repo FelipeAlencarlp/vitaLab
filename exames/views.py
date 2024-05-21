@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import TiposExames, SolicitacaoExame, PedidosExames
+from .models import TiposExames, SolicitacaoExame, PedidosExames, AcessoMedico
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from django.contrib import messages
@@ -115,3 +115,43 @@ def solicitar_senha_exames(request, exame_id):
         
         messages.add_message(request, messages.ERROR, 'Senha inválida!')
         return redirect(f'/exames/solicitar_senha_exames/{exame_id}')
+
+
+@login_required
+def gerar_acesso_medico(request):
+    if request.method == 'GET':
+        acessos_medico = AcessoMedico.objects.filter(usuario=request.user)
+        return render(request, 'gerar_acesso_medico.html', {'acessos_medico': acessos_medico})
+
+    elif request.method == 'POST':
+        identificacao = request.POST.get('identificacao')
+        tempo_de_acesso = request.POST.get('tempo_de_acesso')
+        data_exame_inicial = request.POST.get('data_exame_inicial')
+        data_exame_final = request.POST.get('data_exame_final')
+
+        acesso_medico = AcessoMedico(
+            usuario = request.user,
+            identificacao = identificacao,
+            tempo_de_acesso = tempo_de_acesso,
+            data_exames_iniciais = data_exame_inicial,
+            data_exames_finais = data_exame_final,
+            criado_em = datetime.now()
+        )
+
+        acesso_medico.save()
+
+        messages.add_message(request, messages.SUCCESS, 'Acesso gerado com sucesso')
+        return redirect('/exames/gerar_acesso_medico')
+
+
+def acesso_medico(request, token):
+    acesso_medico = AcessoMedico.objects.get(token=token)
+
+    if acesso_medico.status == 'Expirado':
+        messages.add_message(request, messages.SUCCESS, 'Esse token está expirado, por favor solicite outro.')
+        return redirect('/auth/login/')
+
+    pedidos = PedidosExames.objects.filter(usuario=acesso_medico.usuario).filter(data__gte=acesso_medico.data_exames_iniciais).filter(data__lte=acesso_medico.data_exames_finais)
+
+    return render(request, 'acesso_medico.html', {'pedidos': pedidos})
+
